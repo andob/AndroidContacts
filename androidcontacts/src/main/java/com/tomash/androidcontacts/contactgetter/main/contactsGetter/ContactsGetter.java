@@ -23,6 +23,7 @@ import com.tomash.androidcontacts.contactgetter.entity.SpecialDate;
 import com.tomash.androidcontacts.contactgetter.interfaces.WithLabel;
 import com.tomash.androidcontacts.contactgetter.main.FieldType;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,11 +55,10 @@ class ContactsGetter {
         ContactsContract.Contacts.PHOTO_URI, ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME};
     private static final String[] CONTACTS_PROJECTION_LOW_API = new String[]{ContactsContract.Contacts._ID,
         ContactsContract.Contacts.PHOTO_URI, ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME};
-    private static final String[] ADDITIONAL_DATA_PROJECTION = new String[]{ContactsContract.Contacts._ID,
-        ContactsContract.RawContacts.ACCOUNT_TYPE, ContactsContract.RawContacts.ACCOUNT_NAME};
     private Class<? extends ContactData> mContactDataClass;
 
-    ContactsGetter(Context ctx, List<FieldType> enabledFields, String sorting, String[] selectionArgs, String selection) {
+
+    public ContactsGetter(Context ctx, List<FieldType> enabledFields, String sorting, String[] selectionArgs, String selection) {
         this.mCtx = ctx;
         this.mResolver = ctx.getContentResolver();
         this.mEnabledFields = enabledFields;
@@ -77,10 +77,6 @@ class ContactsGetter {
             android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1 ? CONTACTS_PROJECTION : CONTACTS_PROJECTION_LOW_API, selection, selectionArgs, ordering);
     }
 
-    private Cursor getContactsCursorWithAdditionalData() {
-        return mResolver.query(ContactsContract.RawContacts.CONTENT_URI, ADDITIONAL_DATA_PROJECTION, null, null, null);
-    }
-
     private <T extends ContactData> T getContactData() {
         if (mContactDataClass == null) {
             return (T) new ContactData() {
@@ -88,19 +84,24 @@ class ContactsGetter {
         }
         try {
             return (T) mContactDataClass.getConstructor().newInstance();
-        } catch (Exception e) {
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
         return null;
     }
 
+
     <T extends ContactData> List<T> getContacts() {
-        Cursor mainCursor = getContactsCursorWithSelection(mSorting, mSelection, mSelectionArgs);
-        Cursor additionalDataCursor = getContactsCursorWithAdditionalData();
-        SparseArray<T> contactsSparse = new SparseArray<>();
-        List<T> result = new ArrayList<>();
-        if (mainCursor == null)
-            return result;
+        Cursor c = getContactsCursorWithSelection(mSorting, mSelection, mSelectionArgs);
+        List<T> contactsList = new ArrayList<>();
+        if (c == null)
+            return contactsList;
         SparseArray<List<PhoneNumber>> phonesDataMap = mEnabledFields.contains(FieldType.PHONE_NUMBERS) ? getDataMap(getCursorFromContentType(WITH_LABEL_PROJECTION, Phone.CONTENT_ITEM_TYPE), new WithLabelCreator<PhoneNumber>() {
             @Override
             public PhoneNumber create(String mainData, int contactId, int labelId, String labelName) {
@@ -169,15 +170,15 @@ class ContactsGetter {
         SparseArray<Organization> organisationDataMap = mEnabledFields.contains(FieldType.ORGANIZATION) ? getOrganizationDataMap() : new SparseArray<Organization>();
         SparseArray<NameData> nameDataMap = mEnabledFields.contains(FieldType.NAME_DATA) ? getNameDataMap() : new SparseArray<NameData>();
         SparseArray<List<Group>> groupsDataMap = mEnabledFields.contains(FieldType.GROUPS) ? getGroupsDataMap() : new SparseArray<List<Group>>();
-        while (mainCursor.moveToNext()) {
-            int id = mainCursor.getInt(mainCursor.getColumnIndex(ContactsContract.Contacts._ID));
+        while (c.moveToNext()) {
+            int id = c.getInt(c.getColumnIndex(ContactsContract.Contacts._ID));
             long date = 0;
             if (android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1)
-                date = mainCursor.getLong(mainCursor.getColumnIndex(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP));
-            String photoUriString = mainCursor.getString(mainCursor.getColumnIndex(ContactsContract.Contacts.PHOTO_URI));
-            String lookupKey = mainCursor.getString(mainCursor.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY));
-            Uri photoUri = photoUriString == null ? Uri.EMPTY : Uri.parse(photoUriString);
-            T data = (T) getContactData()
+                date = c.getLong(c.getColumnIndex(ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP));
+            String photoUriString = c.getString(c.getColumnIndex(ContactsContract.Contacts.PHOTO_URI));
+            String lookupKey = c.getString(c.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY));
+            Uri photoUri = photoUriString == null ? Uri.EMPTY : Uri.parse(c.getString(c.getColumnIndex(ContactsContract.Contacts.PHOTO_URI)));
+            contactsList.add((T) getContactData()
                 .setContactId(id)
                 .setLookupKey(lookupKey)
                 .setLastModificationDate(date)
@@ -195,23 +196,10 @@ class ContactsGetter {
                 .setNameData(nameDataMap.get(id))
                 .setPhotoUri(photoUri)
                 .setGroupList(groupsDataMap.get(id))
-                .setCompositeName(mainCursor.getString(mainCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)));
-            contactsSparse.put(id, data);
-            result.add(data);
+                .setCompositeName(c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))));
         }
-        mainCursor.close();
-        while (additionalDataCursor.moveToNext()) {
-            int id = additionalDataCursor.getInt(additionalDataCursor.getColumnIndex(ContactsContract.RawContacts._ID));
-            ContactData relatedContactData = contactsSparse.get(id);
-            if (relatedContactData != null) {
-                String accountType = additionalDataCursor.getString(additionalDataCursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE));
-                String accountName = additionalDataCursor.getString(additionalDataCursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_NAME));
-                relatedContactData.setAccountName(accountName)
-                    .setAccountType(accountType);
-            }
-        }
-        additionalDataCursor.close();
-        return result;
+        c.close();
+        return contactsList;
     }
 
 

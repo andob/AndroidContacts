@@ -41,15 +41,11 @@ public class BaseTest {
     }
 
     protected void assertContacts(ContactData userContact, ContactData contactFromDb, int bitmapSize) throws Exception {
-        Bitmap saved = getBitmapFromContactData(contactFromDb);
-        Assert.assertTrue(saved.getHeight() == bitmapSize && saved.getWidth() == bitmapSize);
         Assert.assertEquals(userContact.getCompositeName(), contactFromDb.getCompositeName());
         Assert.assertEquals(userContact.getNote(), contactFromDb.getNote());
         Assert.assertEquals(userContact.getNickName(), contactFromDb.getNickName());
         Assert.assertEquals(userContact.getSipAddress(), contactFromDb.getSipAddress());
         Assert.assertEquals(userContact.getOrganization(), contactFromDb.getOrganization());
-        Assert.assertEquals(userContact.getAccountType(), contactFromDb.getAccountType());
-        Assert.assertEquals(userContact.getAccountName(), contactFromDb.getAccountName());
         for (Email email : userContact.getEmailList()) {
             Assert.assertTrue(contactFromDb.getEmailList().contains(email));
         }
@@ -72,9 +68,4 @@ public class BaseTest {
             Assert.assertTrue(contactFromDb.getRelationsList().contains(relation));
         }
     }
-
-    protected Bitmap getBitmapFromContactData(ContactData contactFromDb) throws Exception {
-        return MediaStore.Images.Media.getBitmap(mCtx.getContentResolver(), contactFromDb.getPhotoUri());
-    }
-
 }

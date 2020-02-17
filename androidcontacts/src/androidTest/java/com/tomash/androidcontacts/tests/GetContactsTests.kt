@@ -51,54 +51,12 @@ class GetContactsTests : BaseTest() {
 
     @Test
     @Throws(Exception::class)
-    fun queryingByPhotoWorksCorrectly() {
-        val savedData = createRandomList {
-            it.take(it.size / 2).forEach { it.updatedBitmap = null }
-        }
-        val savedList = getList { onlyWithPhotos() }
-        Assert.assertEquals((savedData.size / 2).toLong(), savedList.size.toLong())
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun comboQueryIsWorking() {
-        val savedData = createRandomList {
-            it.take(it.size / 2).forEach {
-                it.updatedBitmap = null
-                it.phoneList.clear()
-            }
-        }
-        val savedList = getList { onlyWithPhotos().onlyWithPhones() }
-        Assert.assertEquals((savedData.size / 2).toLong(), savedList.size.toLong())
-    }
-
-    @Test
-    @Throws(Exception::class)
     fun ascendingNameSortingWorksAsExpected() {
         val savedData = createRandomList {}
         val savedList = getList { setSortOrder(Sorting.BY_DISPLAY_NAME_ASC) }
         savedData.sortedBy { it.compositeName }.forEachIndexed { index, contactData ->
             Assert.assertTrue(savedList[index].compositeName == contactData.compositeName)
         }
-    }
-
-    @Test
-    fun withPhoneLikeFiltersPhones() {
-        //create list with 50 contacts and save them
-        createRandomList {
-            //removing all random phones
-            //adding numbers from example
-            it.forEach { it.phoneList.clear() }
-            it[0].phoneList.run { add(PhoneNumber("+631230001234", "1234")) }
-            it[1].phoneList.run { add(PhoneNumber("+1 123 000 1234", "1234")) }
-            it[2].phoneList.run { add(PhoneNumber("01230001234", "1234")) }
-            //adding one number that should be filtered
-            it[3].phoneList.run { add(PhoneNumber("001234", "1234")) }
-        }
-        //getting contacts from android
-        val savedList = getList { withPhoneLike("1230001234") }
-        //asserting that all of them were added
-        Assert.assertEquals(3, savedList.size)
     }
 
     @Test

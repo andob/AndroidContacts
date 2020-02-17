@@ -5,6 +5,10 @@ import android.provider.ContactsContract;
 
 import com.tomash.androidcontacts.contactgetter.interfaces.WithLabel;
 
+/**
+ * Created by andrew on 2/24/17.
+ */
+
 public class Relation extends WithLabel {
 
     public static final int TYPE_ASSISTANT = 1;
@@ -36,7 +40,7 @@ public class Relation extends WithLabel {
     }
 
     @Override
-    protected String getLabelNameResId(Context ctx, int id) {
+    protected String getLabelNameResId(Context ctx,int id) {
         return ctx.getString(ContactsContract.CommonDataKinds.Relation.getTypeLabelResource(id));
     }
 
@@ -47,7 +51,7 @@ public class Relation extends WithLabel {
 
     @Override
     protected boolean isValidLabel(int id) {
-        return id >= 1 && id <= 14;
+        return id>=1 && id<=14;
     }
 
     @Override

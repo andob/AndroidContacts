@@ -1,25 +1,20 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-kapt'
+apply plugin: 'com.github.dcendents.android-maven'
 
-apply from: 'bintray.gradle'
-apply from: '../deps.gradle'
+group='com.github.jitpack'
+version '1.0'
 
 android {
-    compileSdkVersion versions.compileSdkVersion
-    buildToolsVersion "29.0.2"
+    compileSdkVersion 29
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
         minSdkVersion 15
         targetSdkVersion 29
-        versionCode versions.buildCode
-        versionName versions.publishVersion
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    androidExtensions {
-        experimental = true
     }
 
     sourceSets {
@@ -32,11 +27,12 @@ android {
 }
 
 dependencies {
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
-    androidTestImplementation 'androidx.test:runner:1.1.1'
-    androidTestImplementation 'androidx.test:rules:1.1.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$versions.kotlin_version"
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$versions.kotlin_version"
-    testImplementation "org.jetbrains.kotlin:kotlin-test:$versions.kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:rules:1.2.0'
 }
 

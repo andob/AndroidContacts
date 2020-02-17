@@ -1,5 +1,9 @@
 package com.tomash.androidcontacts.contactgetter.entity;
 
+/**
+ * Created by Andrew on 26.02.2017.
+ */
+
 public class Organization {
     private String name = "";
     private String title = "";

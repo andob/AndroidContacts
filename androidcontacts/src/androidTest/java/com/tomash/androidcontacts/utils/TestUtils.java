@@ -40,12 +40,9 @@ public class TestUtils {
 
     public static ContactData createRandomContactData(Context ctx, int bitmapSize) throws Exception {
         ContactData contactData = ContactDataFactory.createEmpty();
-        contactData.setUpdatedBitmap(Bitmap.createBitmap(bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888));
         contactData.setCompositeName(generateRandomString());
         contactData.setNickName(generateRandomString());
         contactData.setSipAddress(generateRandomString());
-        contactData.setAccountType(generateRandomString());
-        contactData.setAccountName(generateRandomString());
         contactData.setOrganization(new Organization(generateRandomString(), generateRandomString()));
         contactData.setNote(generateRandomString());
         contactData.getPhoneList().add(generateRandomWithLabel(PhoneNumber.class));

@@ -1,25 +1,29 @@
 package com.tomash.androidcontacts.contactgetter.main.contactsGetter;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 
 import com.tomash.androidcontacts.contactgetter.entity.ContactData;
-import com.tomash.androidcontacts.contactgetter.interfaces.BaseFilter;
 import com.tomash.androidcontacts.contactgetter.main.FieldType;
 import com.tomash.androidcontacts.contactgetter.main.Sorting;
-import com.tomash.androidcontacts.contactgetter.utils.FilterUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
+
+/**
+ * Created by root on 3/3/17.
+ */
 
 public class ContactsGetterBuilder {
     private Context mCtx;
     private Sorting mSortOrder = Sorting.BY_DISPLAY_NAME_ASC;
     private StringBuilder mSelectionBuilder = new StringBuilder();
     private List<String> mParamsList = new ArrayList<>(2);
-    private List<BaseFilter> mFilterList = new ArrayList<>(8);
     private List<FieldType> mEnabledFields = new ArrayList<>(8);
 
     public ContactsGetterBuilder(Context ctx) {
@@ -108,98 +112,48 @@ public class ContactsGetterBuilder {
     }
 
     /**
-     * Searches for contacts that contains this number sequence
+     * Searches for contacts with phone number that contains sequence
      *
-     * @param number number sequence to search for
+     * @param phoneNumber sequence to search for
      */
-    public ContactsGetterBuilder withPhoneLike(final String number) {
-        mFilterList.add(FilterUtils.withPhoneLikeFilter(number));
-        return onlyWithPhones();
-    }
+    public ContactsGetterBuilder withPhoneNumber(String phoneNumber) {
+        String id=findContactIdByPhoneNumber(phoneNumber);
+        if (id!=null)
+        {
+            if (mSelectionBuilder.length() != 0)
+                mSelectionBuilder.append(" AND ");
+            mSelectionBuilder.append(BaseColumns._ID+" = ?");
+            mParamsList.add(id);
+        }
+        else
+        {
+            //phone number not found
+            mSelectionBuilder.append("1 = 3");
+        }
 
-    /**
-     * Searches for contacts with this number
-     *
-     * @param number number to search for
-     */
-    public ContactsGetterBuilder withPhone(final String number) {
-        mFilterList.add(FilterUtils.withPhoneFilter(number));
-        return onlyWithPhones();
-    }
-
-    /**
-     * Searches for contacts with this email
-     * Implicitly adds Email field
-     *
-     * @param email email to search for
-     */
-    public ContactsGetterBuilder withEmail(final String email) {
-        addField(FieldType.EMAILS);
-        mFilterList.add(FilterUtils.withEmailFilter(email));
         return this;
     }
 
-    /**
-     * Searches for contacts that contains sequence
-     * Implicitly adds Email field
-     *
-     * @param sequence sequence to search for
-     */
-    public ContactsGetterBuilder withEmailLike(final String sequence) {
-        addField(FieldType.EMAILS);
-        mFilterList.add(FilterUtils.withEmailLikeFilter(sequence));
-        return this;
-    }
+    public String findContactIdByPhoneNumber(String phoneNumber)
+    {
+        String contactId = null;
+        if (phoneNumber != null && phoneNumber.length() > 0) {
+            ContentResolver contentResolver = mCtx.getContentResolver();
 
-    /**
-     * Searches for contacts with this number
-     * Implicitly adds Address field
-     *
-     * @param number number to search for
-     */
-    public ContactsGetterBuilder withAddress(final String number) {
-        addField(FieldType.ADDRESS);
-        mFilterList.add(FilterUtils.withAddressFilter(number));
-        return this;
-    }
+            Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
 
-    /**
-     * Searches for addresses that contains this sequence
-     * Implicitly adds Address field
-     *
-     * @param sequence sequence to search for
-     */
-    public ContactsGetterBuilder withAddressLike(final String sequence) {
-        addField(FieldType.ADDRESS);
-        mFilterList.add(FilterUtils.withAddressLikeFilter(sequence));
-        return this;
-    }
+            String[] projection = new String[] { ContactsContract.PhoneLookup._ID };
 
+            Cursor cursor = contentResolver.query(uri, projection, null, null, null);
 
-    private <T extends ContactData> List<T> applyFilters(List<T> contactList) {
-        for (BaseFilter filter : mFilterList) {
-            for (Iterator<T> iterator = contactList.iterator(); iterator.hasNext(); ) {
-                ContactData contact = iterator.next();
-                if (!filter.passedFilter(contact))
-                    iterator.remove();
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    contactId = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup._ID));
+                }
+                cursor.close();
             }
         }
-        return contactList;
-    }
-
-    /**
-     * <p>
-     * Applies custom filter to query on contacts list
-     * </p>
-     * <p>
-     * Additional filters and example implementations could be found here {@link FilterUtils}
-     * </p>
-     *
-     * @param filter filter to apply
-     */
-    public ContactsGetterBuilder applyCustomFilter(BaseFilter filter) {
-        mFilterList.add(filter);
-        return this;
+        return contactId;
     }
 
     /**
@@ -246,16 +200,16 @@ public class ContactsGetterBuilder {
      * @param T class of object you want to get data
      */
     public <T extends ContactData> List<T> buildList(Class<? extends ContactData> T) {
-        return applyFilters((List<T>) initGetter()
+        return initGetter()
             .setContactDataClass(T)
-            .getContacts());
+            .getContacts();
     }
 
     /**
      * Builds list of contacts
      */
     public List<ContactData> buildList() {
-        return applyFilters(initGetter().getContacts());
+        return initGetter().getContacts();
     }
 
     /**

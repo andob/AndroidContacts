@@ -52,22 +52,6 @@ public class InsertTests extends BaseTest {
         assertContacts(contactData, savedContact, bitmapSize);
     }
 
-    @Test
-    public void photoUriIsChangedCorrectly() throws Exception {
-        int firstBitmapSize = 10;
-        int secondBitmapSize = 20;
-        //creating and saving first contactData to db
-        ContactData contactData1 = createRandomContactData(mCtx, firstBitmapSize);
-        int firstId = saveToDb(contactData1);
-        contactData1 = getFromDbById(firstId);
-        //creating second contact data and assigning uri of bitmap from first to it
-        ContactData contactData2 = createRandomContactData(mCtx, secondBitmapSize);
-        contactData2.setUpdatedPhotoUri(contactData1.getPhotoUri());
-        int secondId = saveToDb(contactData2);
-        contactData2 = getFromDbById(secondId);
-        Assert.assertEquals(getBitmapFromContactData(contactData2).getHeight(), firstBitmapSize);
-    }
-
     private ContactData getFromDbById(int id) {
         return new ContactsGetterBuilder(mCtx)
             .allFields()
