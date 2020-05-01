@@ -1,9 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'digital.wup.android-maven-publish'
 
-group='com.github.jitpack'
-version '1.0'
 
 android {
     compileSdkVersion 29
@@ -36,3 +34,15 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.2.0'
 }
 
+publishing {
+    publications {
+        android.libraryVariants.all { variant ->
+            "maven${variant.name.capitalize()}Aar"(MavenPublication) {
+                from components.findByName("android${variant.name.capitalize()}")
+                groupId 'ro.andob.androidcontacts'
+                artifactId 'androidcontacts'
+                version '1.12.0'
+            }
+        }
+    }
+}
