@@ -37,7 +37,7 @@ public class BaseTest {
     @Before
     public void setUp() throws Exception {
         mCtx = InstrumentationRegistry.getTargetContext();
-        deleteAllContacts(mCtx);
+//        deleteAllContacts(mCtx);
     }
 
     protected void assertContacts(ContactData userContact, ContactData contactFromDb, int bitmapSize) throws Exception {
